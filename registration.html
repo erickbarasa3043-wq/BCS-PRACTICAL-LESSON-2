@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registrar — Student Registration System Prototype</title>
+<style>
+  :root{
+    --navy:#1B2A4A;
+    --navy-light:#28395e;
+    --parchment:#F7F4EC;
+    --paper:#FFFFFF;
+    --brass:#B08D57;
+    --brass-dark:#8f7143;
+    --slate:#4A5568;
+    --ink:#1F2430;
+    --line:#DCD5C4;
+    --success:#3F7A5E;
+    --alert:#B04A3A;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family: 'Iowan Old Style', 'Georgia', serif;
+    background:var(--parchment);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+  .sans{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; }
+
+  /* ---------- Screen management ---------- */
+  .screen{ display:none; min-height:100vh; }
+  .screen.active{ display:block; }
+
+  /* ---------- Login ---------- */
+  #screen-login.active{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:
+      linear-gradient(180deg, rgba(27,42,74,0.94), rgba(27,42,74,0.86)),
+      repeating-linear-gradient(135deg, rgba(255,255,255,0.02) 0 2px, transparent 2px 40px);
+    background-color:var(--navy);
+  }
+  .login-card{
+    width:380px;
+    max-width:90vw;
+    background:var(--paper);
+    border-radius:2px;
+    padding:44px 40px 36px;
+    box-shadow:0 30px 60px rgba(0,0,0,0.35);
+    border-top:4px solid var(--brass);
+  }
+  .login-mark{
+    font-size:12px;
+    letter-spacing:0.14em;
+    color:var(--brass-dark);
+    font-family: 'Iowan Old Style', Georgia, serif;
+    margin-bottom:6px;
+  }
+  .login-card h1{
+    font-size:24px;
+    margin:0 0 4px;
+    line-height:1.25;
+    color:var(--navy);
+  }
+  .login-card p.sub{
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font-size:13.5px;
+    color:var(--slate);
+    margin:0 0 28px;
+  }
+  .field{ margin-bottom:18px; }
+  .field label{
+    display:block;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font-size:12.5px;
+    color:var(--slate);
+    margin-bottom:6px;
+  }
+  .field input, .field select{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    border-radius:3px;
+    font-size:14.5px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background:#FDFCF9;
+    color:var(--ink);
+  }
+  .field input:focus, .field select:focus{
+    outline:2px solid var(--brass);
+    outline-offset:1px;
+    border-color:var(--brass);
+  }
+  .role-toggle{
+    display:flex;
+    gap:8px;
+    margin-bottom:22px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  }
+  .role-toggle button{
+    flex:1;
+    padding:8px 0;
+    font-size:12.5px;
+    border:1px solid var(--line);
+    background:#FDFCF9;
+    color:var(--slate);
+    cursor:pointer;
+    border-radius:3px;
+  }
+  .role-toggle button.selected{
+    background:var(--navy);
+    color:#fff;
+    border-color:var(--navy);
+  }
+  .btn-primary{
+    width:100%;
+    padding:12px 0;
+    background:var(--navy);
+    color:#fff;
+    border:none;
+    border-radius:3px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font-size:14.5px;
+    cursor:pointer;
+    transition:background .15s ease;
+  }
+  .btn-primary:hover{ background:var(--navy-light); }
+  .login-foot{
+    margin-top:16px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font-size:12px;
+    color:var(--slate);
+    text-align:center;
+  }
+  .login-foot a{ color:var(--brass-dark); text-decoration:none; }
+  .error-banner{
+    display:none;
+    background:#FBEAE6;
+    border:1px solid var(--alert);
+    color:var(--alert);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font-size:12.5px;
+    padding:9px 12px;
+    border-radius:3px;
+    margin-bottom:18px;
+  }
+  .error-banner.show{ display:block; }
+
+  /* ---------- App shell ---------- */
+  .app{ display:flex; min-height:100vh; }
+  .sidebar{
+    width:220px;
+    flex-shrink:0;
+    background:var(--navy);
+    color:#EDEAE0;
+    padding:26px 0;
+    display:flex;
+    flex-direction:column;
+  }
+  .brand{
+    font-size:14px;
+    letter-spacing:0.06em;
+    padding:0 24px 22px;
+    border-bottom:1px solid rgba(255,255,255,0.14);
+    margin-bottom:18px;
+  }
+  .brand small{
+    display:block;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font-size:10.5px;
+    letter-spacing:0.12em;
+    color:var(--brass);
+    margin-top:3px;
+  }
+  .nav-item{
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font-size:13.5px;
+    padding:11px 24px;
+    color:#CBD2DE;
+    cursor:pointer;
+    border-left:3px solid transparent;
+  }
+  .nav-item:hover{ background:rgba(255,255,255,0.05); color:#fff; }
+  .nav-item.active{
+    background:rgba(255,255,255,0.08);
+    border-left-color:var(--brass);
+    color:#fff;
+  }
+  .nav-spacer{ flex:1; }
+  .nav-user{
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font-size:12px;
+    padding:14px 24px 0;
+    border-top:1px solid rgba(255,255,255,0.14);
+    color:#AEB6C4;
+  }
+  .nav-user b{ color:#fff; display:block; font-size:13px; margin-bottom:2px;}
+  .nav-logout{
+    margin:10px 24px 0;
+    font-size:12px;
+    color:var(--brass);
+    cursor:pointer;
+    text-decoration:underline;
+  }
+
+  .main{ flex:1; padding:34px 42px 60px; max-width:1080px; }
+  .page-head{ margin-bottom:26px; }
+  .page-head .eyebrow{
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font-size:12px;
+    color:var(--brass-dark);
+    margin-bottom:4px;
+  }
+  .page-head h1{ font-size:26px; margin:0 0 6px; color:var(--navy); }
+  .page-head p{
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font-size:13.5px;
+    color:var(--slate);
+    margin:0;
+    max-width:60ch;
+  }
+
+  /* dashboard */
+  .stat-row{ display:flex; gap:1px; background:var(--line); margin-bottom:34px; border:1px solid var(--line);}
+  .stat{
+    flex:1; background:var(--paper); padding:18px 20px;
+  }
+  .stat .num{ font-size:28px; color:var(--navy); }
+  .stat .lbl{
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font-size:11.5px; color:var(--slate); margin-top:2px; letter-spacing:0.03em;
+  }
+  .quick-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:34px;}
+  .quick-card{
+    background:var(--paper);
+    border:1px solid var(--line);
+    padding:20px;
+    cursor:pointer;
+    transition:border-color .15s ease;
+  }
+  .quick-card:hover{ border-color:var(--brass); }
+  .quick-card h3{ margin:0 0 6px; font-size:16px; color:var(--navy); }
+  .quick-card p{
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font-size:12.5px; color:var(--slate); margin:0;
+  }
+  table.list{
+    width:100%; border-collapse:collapse;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font-size:13px;
+  }
+  table.list th{
+    text-align:left; font-weight:600; color:var(--slate);
+    font-size:11.5px; letter-spacing:0.02em;
+    padding:8px 10px; border-bottom:1px solid var(--navy);
+  }
+  table.list td{ padding:10px 10px; border-bottom:1px solid var(--line); color:var(--ink);}
+  .tag{
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font-size:11px; padding:2px 8px; border-radius:10px;
+  }
+  .tag.ok{ background:#E4F1EA; color:var(--success); }
+  .tag.pending{ background:#FBF1DF; color:var(--brass-dark); }
+
+  /* form (data entry) */
+  .form-card{
+    background:var(--paper); border:1px solid var(--line); padding:28px 30px; max-width:720px;
+  }
+  .form-grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px 20px; margin-bottom:22px;}
+  .form-grid .full{ grid-column:1 / -1; }
+  fieldset{ border:1px solid var(--line); padding:16px 18px 18px; margin:0 0 22px; }
+  legend{
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font-size:12px; color:var(--navy); padding:0 6px;
+  }
+  .unit-row{
+    display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--line);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font-size:13px;
+  }
+  .unit-row:last-child{ border-bottom:none; }
+  .unit-row .code{ width:80px; color:var(--slate); font-size:12px;}
+  .unit-row .title{ flex:1; }
+  .unit-row .credits{ width:70px; text-align:right; color:var(--slate); font-size:12px;}
+  .helper{
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font-size:11.5px; color:var(--slate); margin-top:4px;
+  }
+  .btn-row{ display:flex; gap:10px; margin-top:6px;}
+  .btn-secondary{
+    padding:11px 18px; background:#fff; border:1px solid var(--line); color:var(--slate);
+    border-radius:3px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font-size:13.5px; cursor:pointer;
+  }
+  .btn-primary.inline{ width:auto; padding:11px 22px;}
+  .toast{
+    display:none;
+    margin-top:18px; padding:10px 14px; background:#E4F1EA; border:1px solid var(--success);
+    color:var(--success); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font-size:13px; border-radius:3px;
+  }
+  .toast.show{ display:block; }
+
+  /* search */
+  .search-bar{ display:flex; gap:10px; margin-bottom:22px;}
+  .search-bar input, .search-bar select{
+    padding:10px 12px; border:1px solid var(--line); border-radius:3px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font-size:13.5px; background:#FDFCF9;
+  }
+  .search-bar input{ flex:1; }
+  .search-bar button{
+    padding:10px 20px; background:var(--navy); color:#fff; border:none; border-radius:3px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font-size:13.5px; cursor:pointer;
+  }
+  .result-row{ cursor:pointer; }
+  .result-row:hover{ background:#FBF9F3; }
+  .detail-panel{
+    display:none;
+    margin-top:20px; background:var(--paper); border:1px solid var(--brass); padding:22px 26px;
+  }
+  .detail-panel.show{ display:block; }
+  .detail-panel h3{ margin:0 0 14px; color:var(--navy); font-size:17px;}
+  .detail-grid{
+    display:grid; grid-template-columns:1fr 1fr; gap:10px 24px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font-size:13px;
+  }
+  .detail-grid .k{ color:var(--slate); font-size:11.5px; }
+  .detail-grid .v{ color:var(--ink); margin-top:1px; }
+
+  /* report */
+  .report-filters{ display:flex; gap:10px; margin-bottom:22px; align-items:center; flex-wrap:wrap;}
+  .report-filters select{
+    padding:9px 10px; border:1px solid var(--line); border-radius:3px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font-size:13px; background:#FDFCF9;
+  }
+  .report-filters .btn-primary.inline{ margin-left:auto; }
+  .chart{
+    display:flex; align-items:flex-end; gap:22px; height:180px;
+    background:var(--paper); border:1px solid var(--line); padding:20px 26px 0; margin-bottom:26px;
+  }
+  .bar-col{ display:flex; flex-direction:column; align-items:center; gap:8px; flex:1;}
+  .bar{
+    width:100%; max-width:46px; background:var(--brass); border-radius:2px 2px 0 0;
+  }
+  .bar-label{
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font-size:11px; color:var(--slate); padding-bottom:10px;
+  }
+  .report-actions{ display:flex; gap:10px; margin-top:18px;}
+
+  .note{
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font-size:11.5px; color:var(--slate); background:#F0ECE0; border:1px dashed var(--line);
+    padding:8px 12px; margin-bottom:22px; border-radius:3px;
+  }
+</style>
+</head>
+<body>
+
+<!-- =================== LOGIN =================== -->
+<div class="screen active" id="screen-login">
+  <div class="login-card">
+    <div class="login-mark sans">MASINDE MULIRO UNIVERSITY OF SCIENCE AND TECHNOLOGY</div>
+    <h1>Student Registration Portal</h1>
+    <p class="sub">Sign in to register for units, view records, or manage registrations.</p>
+
+    <div class="error-banner" id="loginError">Incorrect ID/email or password. Please try again.</div>
+
+    <div class="role-toggle">
+      <button class="selected" id="roleStudentBtn" onclick="selectRole('student')">Student</button>
+      <button id="roleRegistrarBtn" onclick="selectRole('registrar')">Registrar / Staff</button>
+    </div>
+
+    <div class="field">
+      <label id="idLabel" class="sans">Registration Number</label>
+      <input type="text" id="loginId" placeholder="e.g. BSC-CS-014-2023">
+    </div>
+    <div class="field">
+      <label class="sans">Password</label>
+      <input type="password" id="loginPw" placeholder="••••••••">
+    </div>
+    <button class="btn-primary" onclick="doLogin()">Sign in</button>
+    <div class="login-foot">
+      <a href="#" onclick="return false;">Forgot password?</a> &nbsp;·&nbsp; Prototype: any credentials work
+    </div>
+  </div>
+</div>
+
+<!-- =================== APP SHELL (Dashboard / Data entry / Search / Report) =================== -->
+<div class="screen" id="screen-app">
+  <div class="app">
+    <div class="sidebar sans">
+      <div class="brand">MMUST REGISTRAR
+        <small>STUDENT REGISTRATION SYSTEM</small>
+      </div>
+      <div class="nav-item active" data-target="dashboard" onclick="showTab('dashboard', this)">Dashboard</div>
+      <div class="nav-item" data-target="entry" onclick="showTab('entry', this)">Unit Registration</div>
+      <div class="nav-item" data-target="search" onclick="showTab('search', this)">Search / View Students</div>
+      <div class="nav-item" data-target="report" onclick="showTab('report', this)">Reports</div>
+      <div class="nav-spacer"></div>
+      <div class="nav-user">
+        Signed in as<br><b id="sessionName">Amani Otieno</b>
+        <span id="sessionRole">Student · BSc. Computer Science</span>
+      </div>
+      <div class="nav-logout" onclick="logout()">Sign out</div>
+    </div>
+
+    <div class="main">
+
+      <!-- DASHBOARD -->
+      <div class="tab active" id="tab-dashboard">
+        <div class="page-head">
+          <div class="eyebrow sans">SEMESTER 1, 2026/2027</div>
+          <h1>Welcome back, <span id="dashName">Amani</span></h1>
+          <p>Here's where things stand with your registration this semester.</p>
+        </div>
+
+        <div class="stat-row">
+          <div class="stat"><div class="num">5</div><div class="lbl sans">UNITS REGISTERED</div></div>
+          <div class="stat"><div class="num">15</div><div class="lbl sans">CREDIT HOURS</div></div>
+          <div class="stat"><div class="num">KES 0</div><div class="lbl sans">FEE BALANCE</div></div>
+          <div class="stat"><div class="num">18 Sep</div><div class="lbl sans">REGISTRATION DEADLINE</div></div>
+        </div>
+
+        <div class="quick-grid">
+          <div class="quick-card" onclick="showTab('entry', document.querySelector('[data-target=entry]'))">
+            <h3>Register for units</h3>
+            <p class="sans">Add or drop units for the current semester before the deadline.</p>
+          </div>
+          <div class="quick-card" onclick="showTab('search', document.querySelector('[data-target=search]'))">
+            <h3>Search records</h3>
+            <p class="sans">Look up a student's registration status and unit history.</p>
+          </div>
+          <div class="quick-card" onclick="showTab('report', document.querySelector('[data-target=report]'))">
+            <h3>View reports</h3>
+            <p class="sans">Departmental registration summaries for the semester.</p>
+          </div>
+        </div>
+
+        <table class="list">
+          <thead><tr><th>Unit code</th><th>Unit title</th><th>Credit hours</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>CS 301</td><td>Database Systems</td><td>3</td><td><span class="tag ok">Confirmed</span></td></tr>
+            <tr><td>CS 305</td><td>Software Engineering</td><td>3</td><td><span class="tag ok">Confirmed</span></td></tr>
+            <tr><td>CS 310</td><td>Computer Networks</td><td>3</td><td><span class="tag ok">Confirmed</span></td></tr>
+            <tr><td>MA 210</td><td>Discrete Mathematics</td><td>3</td><td><span class="tag ok">Confirmed</span></td></tr>
+            <tr><td>CS 318</td><td>Human-Computer Interaction</td><td>3</td><td><span class="tag pending">Pending approval</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- DATA ENTRY -->
+      <div class="tab" id="tab-entry">
+        <div class="page-head">
+          <div class="eyebrow sans">UNIT REGISTRATION</div>
+          <h1>Register for units</h1>
+          <p>Confirm your details, select units for the semester, then submit for approval.</p>
+        </div>
+
+        <div class="form-card">
+          <fieldset>
+            <legend class="sans">Student details</legend>
+            <div class="form-grid">
+              <div class="field"><label class="sans">Full name</label><input value="Amani Otieno" readonly></div>
+              <div class="field"><label class="sans">Registration number</label><input value="BSC-CS-014-2023" readonly></div>
+              <div class="field"><label class="sans">Programme</label><input value="BSc. Computer Science" readonly></div>
+              <div class="field"><label class="sans">Year / Semester</label>
+                <select>
+                  <option>Year 3, Semester 1</option>
+                  <option>Year 3, Semester 2</option>
+                </select>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend class="sans">Available units — Year 3, Semester 1</legend>
+            <div class="unit-row"><input type="checkbox" checked><span class="code">CS 301</span><span class="title">Database Systems</span><span class="credits">3 CH</span></div>
+            <div class="unit-row"><input type="checkbox" checked><span class="code">CS 305</span><span class="title">Software Engineering</span><span class="credits">3 CH</span></div>
+            <div class="unit-row"><input type="checkbox" checked><span class="code">CS 310</span><span class="title">Computer Networks</span><span class="credits">3 CH</span></div>
+            <div class="unit-row"><input type="checkbox" checked><span class="code">MA 210</span><span class="title">Discrete Mathematics</span><span class="credits">3 CH</span></div>
+            <div class="unit-row"><input type="checkbox" id="hciCheck"><span class="code">CS 318</span><span class="title">Human-Computer Interaction (elective)</span><span class="credits">3 CH</span></div>
+            <div class="unit-row"><input type="checkbox"><span class="code">CS 322</span><span class="title">Cloud Computing (elective)</span><span class="credits">3 CH</span></div>
+            <div class="helper">Minimum 12 credit hours, maximum 21. Currently selected: <b id="creditCount">15</b> CH.</div>
+          </fieldset>
+
+          <div class="btn-row">
+            <button class="btn-primary inline" onclick="submitRegistration()">Submit registration</button>
+            <button class="btn-secondary" onclick="showTab('dashboard', document.querySelector('[data-target=dashboard]'))">Cancel</button>
+          </div>
+          <div class="toast" id="entryToast">Registration submitted. Units marked "Pending approval" until the registrar confirms.</div>
+        </div>
+      </div>
+
+      <!-- SEARCH / VIEW -->
+      <div class="tab" id="tab-search">
+        <div class="page-head">
+          <div class="eyebrow sans">STUDENT RECORDS</div>
+          <h1>Search / view students</h1>
+          <p>Find a student by name, registration number, or programme to view their registration record.</p>
+        </div>
+
+        <div class="search-bar">
+          <input type="text" id="searchInput" placeholder="Search by name or registration number…" oninput="filterStudents()">
+          <select id="searchDept" onchange="filterStudents()">
+            <option value="">All departments</option>
+            <option>Computer Science</option>
+            <option>Business & Economics</option>
+            <option>Civil Engineering</option>
+          </select>
+          <button onclick="filterStudents()">Search</button>
+        </div>
+
+        <table class="list">
+          <thead><tr><th>Reg. number</th><th>Name</th><th>Programme</th><th>Units</th><th>Status</th></tr></thead>
+          <tbody id="studentTableBody"></tbody>
+        </table>
+
+        <div class="detail-panel" id="studentDetail">
+          <h3 id="detailName"></h3>
+          <div class="detail-grid" id="detailGrid"></div>
+        </div>
+      </div>
+
+      <!-- REPORT -->
+      <div class="tab" id="tab-report">
+        <div class="page-head">
+          <div class="eyebrow sans">REGISTRAR REPORTS</div>
+          <h1>Semester registration report</h1>
+          <p>Registration counts by department for Semester 1, 2026/2027, as of today.</p>
+        </div>
+
+        <div class="report-filters">
+          <select><option>Semester 1, 2026/2027</option><option>Semester 2, 2025/2026</option></select>
+          <select><option>All departments</option><option>Computer Science</option><option>Business &amp; Economics</option><option>Civil Engineering</option></select>
+          <button class="btn-primary inline" onclick="refreshReport()">Apply filters</button>
+        </div>
+
+        <div class="chart" id="reportChart">
+          <div class="bar-col"><div class="bar" style="height:150px"></div><div class="bar-label">Comp. Science<br>412</div></div>
+          <div class="bar-col"><div class="bar" style="height:118px"></div><div class="bar-label">Business & Econ<br>324</div></div>
+          <div class="bar-col"><div class="bar" style="height:96px"></div><div class="bar-label">Civil Eng.<br>264</div></div>
+          <div class="bar-col"><div class="bar" style="height:70px"></div><div class="bar-label">Education<br>192</div></div>
+        </div>
+
+        <table class="list">
+          <thead><tr><th>Department</th><th>Students registered</th><th>Pending approval</th><th>Avg. credit hours</th></tr></thead>
+          <tbody>
+            <tr><td>Computer Science</td><td>412</td><td>18</td><td>16.2</td></tr>
+            <tr><td>Business & Economics</td><td>324</td><td>9</td><td>15.4</td></tr>
+            <tr><td>Civil Engineering</td><td>264</td><td>21</td><td>17.1</td></tr>
+            <tr><td>Education</td><td>192</td><td>4</td><td>14.8</td></tr>
+          </tbody>
+        </table>
+
+        <div class="report-actions">
+          <button class="btn-primary inline" onclick="alert('Prototype only: this would export a PDF/CSV of the report.')">Export report</button>
+          <button class="btn-secondary" onclick="alert('Prototype only: this would print the current view.')">Print</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  var selectedRole = 'student';
+  var students = [
+    {reg:'BSC-CS-014-2023', name:'Amani Otieno', programme:'BSc. Computer Science', dept:'Computer Science', units:5, status:'Confirmed', year:'Year 3', balance:'KES 0', unitsList:['CS 301 Database Systems','CS 305 Software Engineering','CS 310 Computer Networks','MA 210 Discrete Mathematics']},
+    {reg:'BSC-CS-041-2023', name:'Faith Wanjiru', programme:'BSc. Computer Science', dept:'Computer Science', units:6, status:'Confirmed', year:'Year 3', balance:'KES 0', unitsList:['CS 301 Database Systems','CS 305 Software Engineering','CS 318 Human-Computer Interaction']},
+    {reg:'BBM-102-2024', name:'Brian Kiptoo', programme:'BBM Business Management', dept:'Business & Economics', units:4, status:'Pending', year:'Year 2', balance:'KES 8,500', unitsList:['BUS 210 Marketing Principles','BUS 214 Business Statistics']},
+    {reg:'BCE-077-2022', name:'Grace Achieng', programme:'BSc. Civil Engineering', dept:'Civil Engineering', units:5, status:'Confirmed', year:'Year 4', balance:'KES 0', unitsList:['CE 401 Structural Design','CE 405 Geotechnical Engineering']},
+    {reg:'BSC-CS-099-2024', name:'Kevin Mwangi', programme:'BSc. Computer Science', dept:'Computer Science', units:5, status:'Pending', year:'Year 2', balance:'KES 3,200', unitsList:['CS 201 Data Structures','CS 205 Operating Systems']}
+  ];
+
+  function selectRole(role){
+    selectedRole = role;
+    document.getElementById('roleStudentBtn').classList.toggle('selected', role==='student');
+    document.getElementById('roleRegistrarBtn').classList.toggle('selected', role==='registrar');
+    document.getElementById('idLabel').textContent = role==='student' ? 'Registration Number' : 'Staff Email';
+    document.getElementById('loginId').placeholder = role==='student' ? 'e.g. BSC-CS-014-2023' : 'e.g. registrar@mmust.ac.ke';
+  }
+
+  function doLogin(){
+    var id = document.getElementById('loginId').value.trim();
+    var pw = document.getElementById('loginPw').value.trim();
+    var err = document.getElementById('loginError');
+    if(!id || !pw){
+      err.textContent = 'Please enter both your ID/email and password.';
+      err.classList.add('show');
+      return;
+    }
+    err.classList.remove('show');
+    document.getElementById('screen-login').classList.remove('active');
+    document.getElementById('screen-app').classList.add('active');
+
+    if(selectedRole === 'registrar'){
+      document.getElementById('sessionName').textContent = 'J. Nyambura';
+      document.getElementById('sessionRole').textContent = 'Registrar · Academic Office';
+      document.getElementById('dashName').textContent = 'J. Nyambura';
+    } else {
+      document.getElementById('sessionName').textContent = 'Amani Otieno';
+      document.getElementById('sessionRole').textContent = 'Student · BSc. Computer Science';
+      document.getElementById('dashName').textContent = 'Amani';
+    }
+    renderStudentTable(students);
+  }
+
+  function logout(){
+    document.getElementById('screen-app').classList.remove('active');
+    document.getElementById('screen-login').classList.add('active');
+    document.getElementById('loginId').value = '';
+    document.getElementById('loginPw').value = '';
+    document.getElementById('studentDetail').classList.remove('show');
+  }
+
+  function showTab(name, el){
+    document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+    document.getElementById('tab-' + name).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
+    if(el) el.classList.add('active');
+  }
+
+  // ---- Data entry: live credit-hour count ----
+  document.addEventListener('change', function(e){
+    if(e.target.closest && e.target.closest('#tab-entry')){
+      var checked = document.querySelectorAll('#tab-entry .unit-row input[type=checkbox]:checked').length;
+      document.getElementById('creditCount').textContent = checked * 3;
+    }
+  });
+
+  function submitRegistration(){
+    var checked = document.querySelectorAll('#tab-entry .unit-row input[type=checkbox]:checked').length;
+    var credits = checked * 3;
+    if(credits < 12){
+      alert('You must register for at least 12 credit hours (minimum 4 units).');
+      return;
+    }
+    document.getElementById('entryToast').classList.add('show');
+  }
+
+  // ---- Search / view ----
+  function renderStudentTable(list){
+    var body = document.getElementById('studentTableBody');
+    body.innerHTML = '';
+    list.forEach(function(s, i){
+      var tr = document.createElement('tr');
+      tr.className = 'result-row';
+      tr.onclick = function(){ showDetail(s); };
+      var statusClass = s.status === 'Confirmed' ? 'ok' : 'pending';
+      tr.innerHTML = '<td>'+s.reg+'</td><td>'+s.name+'</td><td>'+s.programme+'</td><td>'+s.units+'</td>' +
+        '<td><span class="tag '+statusClass+'">'+s.status+'</span></td>';
+      body.appendChild(tr);
+    });
+  }
+
+  function filterStudents(){
+    var q = document.getElementById('searchInput').value.toLowerCase();
+    var dept = document.getElementById('searchDept').value;
+    var filtered = students.filter(function(s){
+      var matchQ = !q || s.name.toLowerCase().indexOf(q) > -1 || s.reg.toLowerCase().indexOf(q) > -1;
+      var matchDept = !dept || s.dept === dept;
+      return matchQ && matchDept;
+    });
+    renderStudentTable(filtered);
+    document.getElementById('studentDetail').classList.remove('show');
+  }
+
+  function showDetail(s){
+    document.getElementById('detailName').textContent = s.name + ' — ' + s.reg;
+    var grid = document.getElementById('detailGrid');
+    grid.innerHTML =
+      '<div><div class="k">Programme</div><div class="v">'+s.programme+'</div></div>' +
+      '<div><div class="k">Year</div><div class="v">'+s.year+'</div></div>' +
+      '<div><div class="k">Registration status</div><div class="v">'+s.status+'</div></div>' +
+      '<div><div class="k">Fee balance</div><div class="v">'+s.balance+'</div></div>' +
+      '<div style="grid-column:1/-1"><div class="k">Registered units</div><div class="v">'+s.unitsList.join(', ')+'</div></div>';
+    document.getElementById('studentDetail').classList.add('show');
+  }
+
+  function refreshReport(){
+    alert('Prototype only: applying the selected semester/department would re-query registration totals and redraw the chart and table.');
+  }
+</script>
+</body>
+</html>
